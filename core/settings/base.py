@@ -53,6 +53,8 @@ THIRD_PARTY_APPS = [
     "rest_framework",
     "drf_yasg",
     "corsheaders",
+    "rest_framework_simplejwt",
+    "django_filters"
 ]
 
 REST_FRAMEWORK = {
@@ -176,3 +178,6 @@ CELERY_TIMEZONE = "Asia/Tashkent"
 
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
+
+AUTH_USER_MODEL = 'user.User'
+

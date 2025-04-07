@@ -1,5 +1,5 @@
 from django.db import models
-from apps.user.models import CustomUser
+from apps.user.models import User
 from django.utils.translation import gettext_lazy as _
 
 
@@ -14,8 +14,8 @@ class BaseModel(models.Model):
 
 class Team(BaseModel):
     name = models.CharField(max_length=225)
-    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    members = models.ForeignKey(CustomUser, related_name="team_members")
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    members = models.ManyToManyField(User, related_name="team_members", blank=True)
 
     def __str__(self):
         return self.name
@@ -27,13 +27,14 @@ class Stadium(BaseModel):
     longitude = models.DecimalField(max_digits=9, decimal_places=6)
     description = models.TextField(blank=True)
     price_hour = models.DecimalField(max_digits=10, decimal_places=2)
-    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="stadium_owner")
-    manager = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True,
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="stadium_owner")
+    manager = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
                                 related_name="stadium_manager")
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
+
 
 class Bron(BaseModel):
     class ProviderType(models.TextChoices):
@@ -41,7 +42,7 @@ class Bron(BaseModel):
         PAYME = 'payme', _('Payme')
         CASH = 'cash', _('Cash')
 
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="bron_user")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bron_user")
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True, related_name="bron_team")
     stadium = models.ForeignKey(Stadium, on_delete=models.CASCADE, related_name="bron_stadium")
     start_time = models.DateTimeField()
@@ -64,5 +65,3 @@ class Bron(BaseModel):
 
     def __str__(self):
         return f"{self.stadium.name} | {self.start_time}-{self.end_time}"
-
-
