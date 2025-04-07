@@ -2,11 +2,12 @@ from rest_framework import serializers
 from .models import User
 import re
 from django.utils.translation import gettext_lazy as _
+from phonenumber_field.serializerfields import PhoneNumberField
 
 
 class RegisterSerializers(serializers.ModelSerializer):
     full_name = serializers.CharField(max_length=225)
-    phone_number = serializers.CharField(max_length=15)
+    phone_number = PhoneNumberField(required=True)
     password = serializers.CharField(write_only=True)
 
     class Meta:
@@ -14,13 +15,6 @@ class RegisterSerializers(serializers.ModelSerializer):
         fields = ['full_name', 'phone_number', 'password']
 
     def validate_phone_number(self, value):
-        pattern = r"^\+998\d{9}$"
-        if not re.match(pattern, value):
-            raise serializers.ValidationError(
-                {
-                    "message": [_("Phone number format should be +998 followed by 9 digits.")]
-                }
-            )
         if User.objects.filter(phone_number=value).exists():
             raise serializers.ValidationError(
                 {
@@ -43,3 +37,21 @@ class RegisterSerializers(serializers.ModelSerializer):
         return data
 
 
+class LoginSerializers(serializers.Serializer):
+    phone_number = PhoneNumberField(required=True)
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        password = attrs.get('password')
+        phone_number = attrs.get('phone_number')
+        user_qs = User.objects.filter(phone_number=phone_number)
+
+        if not user_qs.exists():
+            raise serializers.ValidationError({'message': _('User not found')})
+
+        user = user_qs.first()
+        if not user.check_password(password):
+            raise serializers.ValidationError({'message': _('The password is incorrect')})
+
+        attrs['user'] = user
+        return attrs
