@@ -72,12 +72,3 @@ class LogoutSerializer(serializers.Serializer):
             raise serializers.ValidationError({"refresh": f"Token is invalid or expired. Details: {str(e)}"})
 
 
-class RefreshSerializers(serializers.Serializer):
-    refresh = serializers.CharField()
-
-    def validate_refresh(self, value):
-        try:
-            access = str(AccessToken(value))
-            return access
-        except TokenError:
-            raise serializers.ValidationError({"message": _("Invalid token")})
