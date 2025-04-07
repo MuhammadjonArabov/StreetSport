@@ -3,6 +3,7 @@ from .models import User
 import re
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.serializerfields import PhoneNumberField
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError, AccessToken
 
 
 class RegisterSerializers(serializers.ModelSerializer):
@@ -55,3 +56,28 @@ class LoginSerializers(serializers.Serializer):
 
         attrs['user'] = user
         return attrs
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+    def validate(self, attrs):
+        self.token = attrs["refresh"]
+        return attrs
+
+    def save(self, **kwargs):
+        try:
+            token = RefreshToken(self.token)
+            token.blacklist()
+        except TokenError as e:
+            raise serializers.ValidationError({"refresh": f"Token is invalid or expired. Details: {str(e)}"})
+
+
+class RefreshSerializers(serializers.Serializer):
+    refresh = serializers.CharField()
+
+    def validate_refresh(self, value):
+        try:
+            access = str(AccessToken(value))
+            return access
+        except TokenError:
+            raise serializers.ValidationError({"message": _("Invalid token")})
