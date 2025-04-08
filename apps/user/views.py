@@ -53,7 +53,7 @@ class CustomTokenRefreshView(TokenRefreshView):
 
 
 class ChangePasswordAPIView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     authentication_classes = [JWTAuthentication]
 
     def post(self, request):
@@ -66,17 +66,15 @@ class ChangePasswordAPIView(APIView):
         if not old_password or not new_password:
             return Response({"detail": "Old and new password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check if old password is correct
         if not user.check_password(old_password):
             raise AuthenticationFailed("Old password is incorrect.")
 
         try:
-            # Validate the new password
             validate_password(new_password, user)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Set the new password and save the user
+
         user.set_password(new_password)
         user.save()
 
