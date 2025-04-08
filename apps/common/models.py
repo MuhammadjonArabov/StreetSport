@@ -23,6 +23,7 @@ class Team(BaseModel):
 
 class Stadium(BaseModel):
     name = models.CharField(max_length=225)
+    image = models.ImageField(upload_to='stadium_image/', null=True, blank=True)
     latitude = models.DecimalField(max_digits=9, decimal_places=6)
     longitude = models.DecimalField(max_digits=9, decimal_places=6)
     description = models.TextField(blank=True)

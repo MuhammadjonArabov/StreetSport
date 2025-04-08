@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from .models import User
-import re
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.serializerfields import PhoneNumberField
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError, AccessToken
