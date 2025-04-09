@@ -2,6 +2,7 @@ from rest_framework import serializers
 from . import models
 from apps.user.models import User
 from datetime import timedelta
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 class BaseStadiumCreateSerializer(serializers.ModelSerializer):
@@ -105,28 +106,29 @@ class BronCreateSerializer(serializers.ModelSerializer):
         fields = ['stadium', 'start_time', 'end_time', 'order_type', 'is_team', 'team']
 
     def validate(self, attrs):
+        user = self.context['request'].user
         start_time = attrs.get('start_time')
         end_time = attrs.get('end_time')
         stadium = attrs.get('stadium')
         is_team = attrs.get('is_team')
-        team = attrs.get('team', None)
-        user = self.context['request'].user
+        team = attrs.get('team')
 
-        if start_time >= end_time:
-            raise serializers.ValidationError(_("Start time must be before end time"))
+        now = timezone.now()
+
+        if any([start_time < now, end_time < now, start_time >= end_time]):
+            raise serializers.ValidationError({
+                "message": _("The time was entered incorrectly.")
+            })
 
         duration = (end_time - start_time).total_seconds() / 3600
-        if duration < 1:
-            raise serializers.ValidationError(_("Booking must be at least 1 hour"))
-        if duration % 1 != 0:
-            raise serializers.ValidationError(_("Booking duration must be in full hours (1, 2, 3, ...)"))
+        if duration < 1 or duration % 1 != 0:
+            raise serializers.ValidationError(_("Booking duration must be 1 hour or more in full hours (1, 2, 3, ...)"))
 
-        overlaps = models.Bron.objects.filter(
-            stadium=stadium,
-            start_time__lt=end_time,
-            end_time__gt=start_time,
-        )
-        if overlaps.exists():
+        if models.Bron.objects.filter(
+                stadium=stadium,
+                start_time__lt=end_time,
+                end_time__gt=start_time
+        ).exists():
             raise serializers.ValidationError(_("This time slot is already booked."))
 
         if user.role in ['admin', 'manager']:
@@ -135,11 +137,10 @@ class BronCreateSerializer(serializers.ModelSerializer):
         if is_team:
             if not team:
                 raise serializers.ValidationError({"team": _("Team must be provided for team bookings.")})
-            if not (team.owner == user or user in team.members.all()):
+            if team.owner != user and user not in team.members.all():
                 raise serializers.ValidationError(_("You are not allowed to book on behalf of this team."))
-        else:
-            if team:
-                raise serializers.ValidationError({"team": _("Team should not be provided for user bookings.")})
+        elif team:
+            raise serializers.ValidationError({"team": _("Team should not be provided for user bookings.")})
 
         return attrs
 
