@@ -150,3 +150,19 @@ class BronCreateSerializer(serializers.ModelSerializer):
         validated_data.pop('is_team')  # Not needed for DB
 
         return super().create(validated_data)
+
+class BronUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Bron
+        fields = ['id', 'is_paid']
+
+
+class StadionBronSerializer(serializers.ModelSerializer):
+    stadium_name = serializers.CharField(source='stadium.name')
+    team_name = serializers.CharField(source='team.name', default=None, allow_null=True)
+    start_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    end_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+
+    class Meta:
+        model = models.Bron
+        fields = ['stadium_name', 'start_time', 'end_time', 'team_name', 'order_type', 'is_paid']

@@ -1,9 +1,9 @@
 from rest_framework.response import Response
-from rest_framework import viewsets, mixins, permissions, generics, filters, views
+from rest_framework import viewsets, permissions, generics, filters, views
 from . import models
 from rest_framework.exceptions import PermissionDenied
 from . import serializers
-from apps.user.permissions import IsAdminUser, IsOwnerUser
+from apps.user.permissions import IsAdminUser, IsOwnerUser, IsManager
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Count, Case, When, IntegerField
 
@@ -68,3 +68,24 @@ class BronCreateAPIView(generics.CreateAPIView):
     queryset = models.Bron.objects.all()
     serializer_class = serializers.BronCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+class BronUpdateAPIView(generics.UpdateAPIView):
+    queryset = models.Bron.objects.all()
+    serializer_class = serializers.BronUpdateSerializer
+    permission_classes = [IsManager]
+    lookup_field = 'pk'
+
+class OwnerBronListAPIView(generics.ListAPIView):
+    serializer_class = serializers.StadionBronSerializer
+    permission_classes = [IsOwnerUser]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['stadium__name', 'start_time', 'end_time', 'is_paid']
+    search_fields = ['stadium__name', ]
+    ordering_fields = ['start_time', 'end_time']
+    ordering = ['start_time']
+
+    def get_queryset(self):
+        user = self.request.user
+        owner_stadium = models.Stadium.objects.filter(owner=user)
+        bron_list = models.Bron.objects.filter(stadium__in=owner_stadium)
+        return bron_list
