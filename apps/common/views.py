@@ -38,7 +38,7 @@ class StadiumViewSet(viewsets.ModelViewSet):
         return super().update(request, *args, **kwargs)
 
 class StadiumStatsCountAPIView(views.APIView):
-    permission_classes = [IsAdminUser, IsOwnerUser]
+    permission_classes = [IsAdminUser]
 
     def get(self, request):
         stats = models.Stadium.objects.aggregate(
@@ -55,11 +55,11 @@ class StadiumStatsCountAPIView(views.APIView):
 
 
 class StadiumListAPIView(generics.ListAPIView):
-    queryset = models.Stadium.objects.select_related('owner', 'manager').all()
+    queryset = models.Stadium.objects.filter(is_active=True).select_related('owner', 'manager').all()
     serializer_class = serializers.StadiumListSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['name', 'price_hour']
-    search_fields = ['name', 'price_hour', 'owner__full_name', 'owner__phone_number', 'manager__full_name',
-                     'manager__phone_number']
+    search_fields = ['name', 'price_hour', 'manager__full_name', 'manager__phone_number']
     ordering_fields = ['name']
