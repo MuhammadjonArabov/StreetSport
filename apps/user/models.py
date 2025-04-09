@@ -47,7 +47,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     role = models.CharField(max_length=10, choices=RoleType.choices, default=RoleType.USER)
     date_joined = models.DateTimeField(default=timezone.now)
     is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=True)
 
     objects = CustomerUserManager()
 

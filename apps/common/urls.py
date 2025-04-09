@@ -1,7 +1,12 @@
 from rest_framework.routers import DefaultRouter
-from .views import StadiumRestrictedViewSet
+from django.urls import path, include
+from . import views
 
 router = DefaultRouter()
-router.register(r'stadium', StadiumRestrictedViewSet, basename='stadium')
+router.register(r'stadium', views.StadiumViewSet, basename='stadium')
 
-urlpatterns = router.urls
+urlpatterns = [
+    path("stadium/list/", views.StadiumListAPIView.as_view(), name="stadium-list"),
+    path('stadium/status/', views.StadiumStatsCountAPIView.as_view(), name="status-count"),
+    path("", include(router.urls)),
+]
