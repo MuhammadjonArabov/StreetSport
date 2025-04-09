@@ -5,7 +5,7 @@ from rest_framework.exceptions import PermissionDenied
 from . import serializers
 from apps.user.permissions import IsAdminUser, IsOwnerUser, IsManager
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Count, Case, When, IntegerField
+from django.db.models import Count, Case, When, IntegerField, Sum, Q, F, ExpressionWrapper, DecimalField
 
 
 class StadiumViewSet(viewsets.ModelViewSet):
@@ -89,3 +89,24 @@ class OwnerBronListAPIView(generics.ListAPIView):
         owner_stadium = models.Stadium.objects.filter(owner=user)
         bron_list = models.Bron.objects.filter(stadium__in=owner_stadium)
         return bron_list
+
+
+class OwnerStadiumStatsView(generics.ListAPIView):
+    serializer_class = serializers.StadiumStatsSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return (
+            models.Stadium.objects.filter(owner=user)
+            .annotate(
+                total_bron_count=Count('bron_stadium', distinct=True),
+                total_income=Sum(
+                    ExpressionWrapper(
+                        F('price_hour'),
+                        output_field=DecimalField()
+                    ),
+                    filter=Q(bron_stadium__is_paid=True)
+                )
+            )
+        )

@@ -1,6 +1,7 @@
 from django.db import models
 from apps.user.models import User
 from django.utils.translation import gettext_lazy as _
+from django.db.models import Sum, Count
 
 
 class BaseModel(models.Model):
@@ -66,3 +67,4 @@ class Bron(BaseModel):
 
     def __str__(self):
         return f"{self.stadium.name} | {self.start_time}-{self.end_time}"
+

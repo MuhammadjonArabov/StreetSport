@@ -1,3 +1,4 @@
+from django.db.models import Sum
 from rest_framework import serializers
 from . import models
 from apps.user.models import User
@@ -122,7 +123,7 @@ class BronCreateSerializer(serializers.ModelSerializer):
 
         duration = (end_time - start_time).total_seconds() / 3600
         if duration < 1 or duration % 1 != 0:
-            raise serializers.ValidationError(_("Booking duration must be 1 hour or more in full hours (1, 2, 3, ...)"))
+            raise serializers.ValidationError(_("The booking time was not available."))
 
         if models.Bron.objects.filter(
                 stadium=stadium,
@@ -166,3 +167,12 @@ class StadionBronSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Bron
         fields = ['stadium_name', 'start_time', 'end_time', 'team_name', 'order_type', 'is_paid']
+
+
+class StadiumStatsSerializer(serializers.ModelSerializer):
+    total_bron_count = serializers.IntegerField()
+    total_income = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        model = models.Stadium
+        fields = ['id', 'name', 'price_hour', 'total_bron_count', 'total_income']
