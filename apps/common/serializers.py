@@ -92,24 +92,34 @@ class StadiumListSerializer(serializers.ModelSerializer):
             'price_hour', 'manager', 'is_active', 'image'
         ]
 
-class BaseBronCreateSerializer(serializers.ModelSerializer):
+class BronCreateSerializer(serializers.ModelSerializer):
+    is_team = serializers.BooleanField(write_only=True)
+    team = serializers.PrimaryKeyRelatedField(
+        queryset=models.Team.objects.all(),
+        required=False,
+        allow_null=True
+    )
 
     class Meta:
         model = models.Bron
-        fields = ['stadium', 'start_time', 'end_time', 'order_type']
+        fields = ['stadium', 'start_time', 'end_time', 'order_type', 'is_team', 'team']
 
     def validate(self, attrs):
         start_time = attrs.get('start_time')
         end_time = attrs.get('end_time')
         stadium = attrs.get('stadium')
+        is_team = attrs.get('is_team')
+        team = attrs.get('team', None)
+        user = self.context['request'].user
 
-        if start_time > end_time:
-            raise serializers.ValidationError({"message": _("Start time must be before end time")})
+        if start_time >= end_time:
+            raise serializers.ValidationError(_("Start time must be before end time"))
 
-        delta = end_time - start_time
-
-        if delta < timedelta:
-            raise serializers.ValidationError({"message": _("Booking must be at least 1 hour")})
+        duration = (end_time - start_time).total_seconds() / 3600
+        if duration < 1:
+            raise serializers.ValidationError(_("Booking must be at least 1 hour"))
+        if duration % 1 != 0:
+            raise serializers.ValidationError(_("Booking duration must be in full hours (1, 2, 3, ...)"))
 
         overlaps = models.Bron.objects.filter(
             stadium=stadium,
@@ -117,8 +127,25 @@ class BaseBronCreateSerializer(serializers.ModelSerializer):
             end_time__gt=start_time,
         )
         if overlaps.exists():
-            raise serializers.ValidationError({"message": _("At this time, the stadium is already full.")})
+            raise serializers.ValidationError(_("This time slot is already booked."))
+
+        if user.role in ['admin', 'manager']:
+            raise serializers.ValidationError(_("Admins and Managers cannot book stadiums."))
+
+        if is_team:
+            if not team:
+                raise serializers.ValidationError({"team": _("Team must be provided for team bookings.")})
+            if not (team.owner == user or user in team.members.all()):
+                raise serializers.ValidationError(_("You are not allowed to book on behalf of this team."))
+        else:
+            if team:
+                raise serializers.ValidationError({"team": _("Team should not be provided for user bookings.")})
+
         return attrs
 
-class UserBronCreateSerializer
+    def create(self, validated_data):
+        user = self.context['request'].user
+        validated_data['user'] = user
+        validated_data.pop('is_team')  # Not needed for DB
 
+        return super().create(validated_data)

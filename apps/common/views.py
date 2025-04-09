@@ -63,3 +63,8 @@ class StadiumListAPIView(generics.ListAPIView):
     filterset_fields = ['name', 'price_hour']
     search_fields = ['name', 'price_hour', 'manager__full_name', 'manager__phone_number']
     ordering_fields = ['name']
+
+class BronCreateAPIView(generics.CreateAPIView):
+    queryset = models.Bron.objects.all()
+    serializer_class = serializers.BronCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
