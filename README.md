@@ -9,3 +9,5 @@ python manage.py migrate
 python manage.py test
 python manage.py runserver
 ```
+
+![Alt text](https://github.com/MuhammadjonArabov/StreetSport/blob/main/project_db.png)
