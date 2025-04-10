@@ -11,12 +11,10 @@ User = get_user_model()
 
 class OwnerStadiumStatsViewTest(APITestCase):
     def setUp(self):
-        # Ensure clean slate
         Stadium.objects.all().delete()
         User.objects.all().delete()
         Bron.objects.all().delete()
 
-        # Create users
         self.owner_user = User.objects.create_user(
             phone_number='+998911111111',
             password='password01',
@@ -27,8 +25,6 @@ class OwnerStadiumStatsViewTest(APITestCase):
             password='password02',
             role='user'
         )
-
-        # Create stadiums owned by owner_user
         self.stadium1 = Stadium.objects.create(
             owner=self.owner_user,
             name='Stadium A',
@@ -43,8 +39,6 @@ class OwnerStadiumStatsViewTest(APITestCase):
             longitude='-34.9876',
             price_hour=decimal.Decimal('15000.00')
         )
-
-        # Create some bron instances
         now = timezone.now()
         Bron.objects.create(
             stadium=self.stadium1,
