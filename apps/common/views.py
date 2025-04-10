@@ -94,7 +94,7 @@ class OwnerBronListAPIView(generics.ListAPIView):
 
 class OwnerStadiumStatsView(generics.ListAPIView):
     serializer_class = serializers.StadiumStatsSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsOwnerUser]
 
     def get_queryset(self):
         user = self.request.user

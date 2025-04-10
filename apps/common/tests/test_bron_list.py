@@ -79,7 +79,7 @@ class OwnerBronListAPIViewTest(APITestCase):
         self.client.force_authenticate(user=self.owner_user)
 
         response = self.client.get(self.url)
-        print("test_list_brons_as_owner response:", response.data)  # Debug output
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 2, f"Expected 2 items, got {len(response.data['results'])}")
         self.assertEqual(response.data['results'][0]['stadium_name'], 'Stadium A')
@@ -105,7 +105,6 @@ class OwnerBronListAPIViewTest(APITestCase):
         self.client.force_authenticate(user=self.owner_user)
 
         response = self.client.get(self.url, {'stadium__name': 'Stadium A'})
-        print("test_filter_by_stadium_name response:", response.data)  # Debug output
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1, f"Expected 1 item, got {len(response.data['results'])}")
         self.assertEqual(response.data['results'][0]['stadium_name'], 'Stadium A')
@@ -115,7 +114,7 @@ class OwnerBronListAPIViewTest(APITestCase):
         self.client.force_authenticate(user=self.owner_user)
 
         response = self.client.get(self.url, {'is_paid': 'true'})
-        print("test_filter_by_is_paid response:", response.data)  # Debug output
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1, f"Expected 1 item, got {len(response.data['results'])}")
         self.assertTrue(response.data['results'][0]['is_paid'])
@@ -125,7 +124,7 @@ class OwnerBronListAPIViewTest(APITestCase):
         self.client.force_authenticate(user=self.owner_user)
 
         response = self.client.get(self.url, {'search': 'Stadium B'})
-        print("test_search_by_stadium_name response:", response.data)  # Debug output
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1, f"Expected 1 item, got {len(response.data['results'])}")
         self.assertEqual(response.data['results'][0]['stadium_name'], 'Stadium B')
@@ -135,7 +134,7 @@ class OwnerBronListAPIViewTest(APITestCase):
         self.client.force_authenticate(user=self.owner_user)
 
         response = self.client.get(self.url, {'ordering': 'end_time'})
-        print("test_order_by_end_time response:", response.data)  # Debug output
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 2, f"Expected 2 items, got {len(response.data['results'])}")
         self.assertEqual(response.data['results'][0]['end_time'], '2025-04-15 16:00:00')  # Adjusted to UTC+5
