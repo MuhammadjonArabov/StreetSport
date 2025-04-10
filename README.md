@@ -5,10 +5,10 @@
 
 ```
 pip install -r requirements/base.txt
-python manage.py makemigrations
 python manage.py migrate
 python manage.py test
 python manage.py runserver
+python manage.py createsuperuser
 ```
 
 ![Alt text](https://github.com/MuhammadjonArabov/StreetSport/blob/main/project_db.png)
