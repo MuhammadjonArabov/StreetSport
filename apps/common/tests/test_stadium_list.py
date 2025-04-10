@@ -7,9 +7,18 @@ User = get_user_model()
 
 class StadiumListTests(APITestCase):
     def setUp(self):
-        self.admin_user = User.objects.create_user(phone_number='+998977777777', password='password07', role='admin')
-        self.owner_user = User.objects.create_user(phone_number='+998911111111', password='password01', role='owner')
-        self.other_user = User.objects.create_user(phone_number='+998922222222', password='password02', role='user')
+        self.admin_user = User.objects.create_user(
+            phone_number='+998977777777',
+            password='password07',
+            role='admin')
+        self.owner_user = User.objects.create_user(
+            phone_number='+998911111111',
+            password='password01',
+            role='owner')
+        self.other_user = User.objects.create_user(
+            phone_number='+998922222222',
+            password='password02',
+            role='user')
 
         self.stadium_data = {
             'latitude': '12.3459',
