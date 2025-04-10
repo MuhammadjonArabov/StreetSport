@@ -1,0 +1,43 @@
+# version: '3'  ← bu qatorni olib tashlang, endi kerak emas
+
+volumes:
+  postgres_data: {}
+  static_data: {}
+  media_data: {}
+
+services:
+  web_sport:
+    container_name: ${PROJECT_NAME}_web
+    depends_on:
+      - db
+      - redis
+    build: .
+    volumes:
+      - .:/app/
+      - static_data:/app/static/
+      - media_data:/app/media/
+      - ./staticfiles:/app/staticfiles
+    env_file: .env
+    command: python manage.py runserver 0.0.0.0:${PORT}
+    ports:
+      - "${PORT}:${PORT}"
+    restart: always
+
+  db:
+    image: postgres:13.4-buster
+    container_name: ${PROJECT_NAME}_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file: .env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_HOST=${DB_HOST}
+      - POSTGRES_PORT=${DB_PORT}
+    restart: always
+
+  redis:
+    image: redis:6
+    container_name: ${PROJECT_NAME}_redis
+    restart: always
