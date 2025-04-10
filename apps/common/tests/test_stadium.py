@@ -112,6 +112,14 @@ class StadiumTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(response.data), 1)
 
+    # def test_list_stadiums_owner(self):
+    #     self.client.force_authenticate(user=self.owner_user)
+    #     stadium = Stadium.objects.create(owner=self.owner_user, **self.stadium_data)
+    #     response = self.client.get('/api/v1/common/stadium/')
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    #     print('yaratilgan stadionlar:', response.data)
+    #     self.assertEqual(len(response.data), 1)
+
     def test_list_stadiums_non_owner(self):
         self.client.force_authenticate(user=self.other_user)
         stadium = Stadium.objects.create(owner=self.owner_user, **self.stadium_data)
