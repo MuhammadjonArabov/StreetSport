@@ -2,25 +2,28 @@ from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from apps.common.models import Stadium, Bron, Team
-from rest_framework.permissions import IsAuthenticated
 from django.urls import reverse
 import datetime
 
 User = get_user_model()
 
-
-class BronCreateAPIViewTest(APITestCase):
+class BronUpdateAPIViewTest(APITestCase):
     def setUp(self):
         # Create users
-        self.user = User.objects.create_user(
+        self.manager_user = User.objects.create_user(
             phone_number='+998911111111',
             password='password01',
+            role='manager'  # Assuming 'manager' role is required for IsManager
+        )
+        self.regular_user = User.objects.create_user(
+            phone_number='+998922222222',
+            password='password02',
             role='user'
         )
 
         # Create a stadium
         self.stadium = Stadium.objects.create(
-            owner=self.user,
+            owner=self.manager_user,
             name='Test Stadium',
             latitude='12.3459',
             longitude='-34.9876',
@@ -30,94 +33,74 @@ class BronCreateAPIViewTest(APITestCase):
         # Create a team
         self.team = Team.objects.create(
             name='Test Team',
-            captain=self.user
+            owner=self.manager_user
+        )
+
+        # Create a bron instance with a user
+        self.bron = Bron.objects.create(
+            stadium=self.stadium,
+            user=self.manager_user,  # Added required user field
+            start_time=datetime.datetime(2025, 4, 15, 10, 0, tzinfo=datetime.timezone.utc),
+            end_time=datetime.datetime(2025, 4, 15, 11, 0, tzinfo=datetime.timezone.utc),
+            order_type='REGULAR',  # Adjust based on your model's valid choices
+            is_paid=False
         )
 
         self.client = APIClient()
-        self.url = reverse('bron-create')
+        self.url = reverse('bron-update', kwargs={'pk': self.bron.pk})
 
-        # Valid data for creating a bron
+        # Valid update data
         self.valid_data = {
-            'stadium': self.stadium.id,
-            'start_time': '2025-04-15T10:00:00Z',
-            'end_time': '2025-04-15T11:00:00Z',
-            'order_type': 'regular',
-            'is_team': False,
-            'team': None
+            'is_paid': True
         }
 
-    def test_create_bron_authenticated(self):
-        """Test creating a bron with valid data as authenticated user"""
-        self.client.force_authenticate(user=self.user)
+    def test_update_bron_as_manager(self):
+        """Test updating a bron as a manager"""
+        self.client.force_authenticate(user=self.manager_user)
 
-        response = self.client.post(self.url, self.valid_data, format='json')
+        response = self.client.patch(self.url, self.valid_data, format='json')
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Bron.objects.count(), 1)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.bron.refresh_from_db()
+        self.assertTrue(self.bron.is_paid)
+        self.assertIn('id', response.data)
+        self.assertIn('is_paid', response.data)
 
-        bron = Bron.objects.first()
-        self.assertEqual(bron.stadium, self.stadium)
-        self.assertEqual(bron.order_type, 'regular')
-        self.assertIsNone(bron.team)
+    def test_update_bron_as_non_manager(self):
+        """Test updating a bron as a non-manager user"""
+        self.client.force_authenticate(user=self.regular_user)
 
-    def test_create_bron_with_team(self):
-        """Test creating a bron with a team"""
-        self.client.force_authenticate(user=self.user)
+        response = self.client.patch(self.url, self.valid_data, format='json')
 
-        team_data = self.valid_data.copy()
-        team_data['is_team'] = True
-        team_data['team'] = self.team.id
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.bron.refresh_from_db()
+        self.assertFalse(self.bron.is_paid)  # Ensure it wasn't updated
 
-        response = self.client.post(self.url, team_data, format='json')
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Bron.objects.count(), 1)
-
-        bron = Bron.objects.first()
-        self.assertEqual(bron.team, self.team)
-        self.assertEqual(bron.stadium, self.stadium)
-
-    def test_create_bron_unauthenticated(self):
-        """Test creating a bron without authentication"""
-        response = self.client.post(self.url, self.valid_data, format='json')
+    def test_update_bron_unauthenticated(self):
+        """Test updating a bron without authentication"""
+        response = self.client.patch(self.url, self.valid_data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertEqual(Bron.objects.count(), 0)
+        self.bron.refresh_from_db()
+        self.assertFalse(self.bron.is_paid)  # Ensure it wasn't updated
 
-    def test_create_bron_invalid_data(self):
-        """Test creating a bron with invalid data"""
-        self.client.force_authenticate(user=self.user)
+    def test_update_bron_invalid_data(self):
+        """Test updating a bron with invalid data"""
+        self.client.force_authenticate(user=self.manager_user)
 
-        invalid_data = self.valid_data.copy()
-        invalid_data['end_time'] = '2025-04-15T09:00:00Z'  # End time before start time
+        invalid_data = {'is_paid': 'not_a_boolean'}  # Invalid type for boolean field
 
-        response = self.client.post(self.url, invalid_data, format='json')
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(Bron.objects.count(), 0)
-
-    def test_create_bron_missing_required_field(self):
-        """Test creating a bron with missing required field"""
-        self.client.force_authenticate(user=self.user)
-
-        incomplete_data = self.valid_data.copy()
-        del incomplete_data['stadium']
-
-        response = self.client.post(self.url, incomplete_data, format='json')
+        response = self.client.patch(self.url, invalid_data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(Bron.objects.count(), 0)
+        self.bron.refresh_from_db()
+        self.assertFalse(self.bron.is_paid)  # Ensure it wasn't updated
 
-    def test_create_bron_team_required_when_is_team_true(self):
-        """Test that team is required when is_team is True"""
-        self.client.force_authenticate(user=self.user)
+    def test_update_nonexistent_bron(self):
+        """Test updating a bron that doesn't exist"""
+        self.client.force_authenticate(user=self.manager_user)
 
-        invalid_team_data = self.valid_data.copy()
-        invalid_team_data['is_team'] = True
-        # team field is None by default in valid_data
+        nonexistent_url = reverse('bron-update', kwargs={'pk': 9999})  # Assuming 9999 doesn't exist
+        response = self.client.patch(nonexistent_url, self.valid_data, format='json')
 
-        response = self.client.post(self.url, invalid_team_data, format='json')
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('team', response.data)
-        self.assertEqual(Bron.objects.count(), 0)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
