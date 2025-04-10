@@ -19,11 +19,12 @@ class StadiumViewSet(viewsets.ModelViewSet):
         else:
             return serializers.StadiumOwnerCreateSerializer
 
-
     def get_queryset(self):
         user = self.request.user
         if user.role == 'admin':
             return models.Stadium.objects.all()
+        elif user.role == 'owner':
+            return models.Stadium.objects.filter(owner=user)
         return models.Stadium.objects.filter(owner=user)
 
     def perform_destroy(self, instance):

@@ -33,9 +33,6 @@ class BaseStadiumCreateSerializer(serializers.ModelSerializer):
         if models.Stadium.objects.filter(name=name, latitude=latitude, longitude=longitude).exists():
             raise serializers.ValidationError({"message": _("Such a stadium already exists.")})
 
-        if manager and manager == owner:
-            raise serializers.ValidationError({"message": _("Owner and Manager cannot be the same user.")})
-
         if manager and manager.role in ['admin', 'owner']:
             raise serializers.ValidationError({"message": _("Manager cannot be a user with 'admin' or 'owner' role.")})
 
